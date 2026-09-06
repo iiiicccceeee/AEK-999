@@ -1,0 +1,283 @@
+-- Roblox Custom GUI Script (Egg Hatch/Steal Game - Thai Version)
+-- Theme: Dark Black & Neon Purple Background | White Text
+-- Open/Close Button: Circle Frame with 🎮❄️
+
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
+-- ScreenGui Root
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "EggSteal_Thai_GUI"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+-- 🎮❄️ Toggle Button
+local ToggleBtn = Instance.new("TextButton")
+ToggleBtn.Name = "OpenCloseCircle"
+ToggleBtn.Parent = ScreenGui
+ToggleBtn.Size = UDim2.new(0, 55, 0, 55)
+ToggleBtn.Position = UDim2.new(0.02, 0, 0.25, 0)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 10, 30)
+ToggleBtn.BorderColor3 = Color3.fromRGB(160, 32, 240)
+ToggleBtn.BorderSizePixel = 2
+ToggleBtn.Text = "🎮❄️"
+ToggleBtn.TextSize = 22
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+ToggleBtn.Active = true
+ToggleBtn.Draggable = true
+
+local UICornerBtn = Instance.new("UICorner")
+UICornerBtn.CornerRadius = UDim.new(1, 0)
+UICornerBtn.Parent = ToggleBtn
+
+-- Main Frame (Dark Black & Purple Theme)
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Parent = ScreenGui
+MainFrame.Size = UDim2.new(0, 380, 0, 420)
+MainFrame.Position = UDim2.new(0.35, 0, 0.2, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 10, 25)
+MainFrame.BorderColor3 = Color3.fromRGB(140, 20, 255)
+MainFrame.BorderSizePixel = 2
+MainFrame.Active = true
+MainFrame.Draggable = true
+MainFrame.Visible = true
+
+local UICornerMain = Instance.new("UICorner")
+UICornerMain.CornerRadius = UDim.new(0, 12)
+UICornerMain.Parent = MainFrame
+
+-- Header Title
+local TitleLabel = Instance.new("TextLabel")
+TitleLabel.Parent = MainFrame
+TitleLabel.Size = UDim2.new(1, 0, 0, 45)
+TitleLabel.BackgroundColor3 = Color3.fromRGB(30, 10, 50)
+TitleLabel.Text = "สคริปต์ขโมยไข่ (Egg Steal) 🎮❄️"
+TitleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+TitleLabel.TextSize = 18
+TitleLabel.Font = Enum.Font.SourceSansBold
+
+local UICornerTitle = Instance.new("UICorner")
+UICornerTitle.CornerRadius = UDim.new(0, 12)
+UICornerTitle.Parent = TitleLabel
+
+-- Scroll Container
+local Scroll = Instance.new("ScrollingFrame")
+Scroll.Parent = MainFrame
+Scroll.Position = UDim2.new(0, 10, 0, 55)
+Scroll.Size = UDim2.new(1, -20, 1, -65)
+Scroll.BackgroundTransparency = 1
+Scroll.CanvasSize = UDim2.new(0, 0, 0, 380)
+Scroll.ScrollBarThickness = 6
+Scroll.ScrollBarImageColor3 = Color3.fromRGB(160, 32, 240)
+
+local UIList = Instance.new("UIListLayout")
+UIList.Parent = Scroll
+UIList.SortOrder = Enum.SortOrder.LayoutOrder
+UIList.Padding = UDim.new(0, 8)
+
+-- Toggle Menu Event
+ToggleBtn.MouseButton1Click:Connect(function()
+    MainFrame.Visible = not MainFrame.Visible
+end)
+
+--------------------------------------------------------
+-- STATE VARIABLES
+--------------------------------------------------------
+local Fly_Active = false
+local Speed_Active = false
+local AutoFarm_Active = false
+local FlyBodyVel, FlyBodyGyro
+
+--------------------------------------------------------
+-- UI COMPONENT CREATORS
+--------------------------------------------------------
+local function CreateToggleRow(labelTitle, callback)
+    local Row = Instance.new("Frame")
+    Row.Size = UDim2.new(1, 0, 0, 45)
+    Row.BackgroundColor3 = Color3.fromRGB(25, 15, 40)
+    Row.Parent = Scroll
+
+    local RowCorner = Instance.new("UICorner")
+    RowCorner.CornerRadius = UDim.new(0, 8)
+    RowCorner.Parent = Row
+
+    local Text = Instance.new("TextLabel")
+    Text.Parent = Row
+    Text.Position = UDim2.new(0, 12, 0, 0)
+    Text.Size = UDim2.new(0.7, 0, 1, 0)
+    Text.Text = labelTitle
+    Text.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Text.TextSize = 14
+    Text.Font = Enum.Font.SourceSansBold
+    Text.TextXAlignment = Enum.TextXAlignment.Left
+    Text.BackgroundTransparency = 1
+
+    local Switch = Instance.new("TextButton")
+    Switch.Parent = Row
+    Switch.Position = UDim2.new(0.73, 0, 0.2, 0)
+    Switch.Size = UDim2.new(0.22, 0, 0.6, 0)
+    Switch.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    Switch.Text = "ปิด"
+    Switch.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Switch.Font = Enum.Font.SourceSansBold
+
+    local SwitchCorner = Instance.new("UICorner")
+    SwitchCorner.CornerRadius = UDim.new(0, 6)
+    SwitchCorner.Parent = Switch
+
+    local state = false
+    Switch.MouseButton1Click:Connect(function()
+        state = not state
+        if state then
+            Switch.BackgroundColor3 = Color3.fromRGB(160, 32, 240)
+            Switch.Text = "เปิด"
+        else
+            Switch.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+            Switch.Text = "ปิด"
+        end
+        callback(state)
+    end)
+end
+
+local function CreateButtonRow(labelTitle, callback)
+    local Btn = Instance.new("TextButton")
+    Btn.Size = UDim2.new(1, 0, 0, 45)
+    Btn.BackgroundColor3 = Color3.fromRGB(45, 15, 70)
+    Btn.Text = labelTitle
+    Btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Btn.TextSize = 14
+    Btn.Font = Enum.Font.SourceSansBold
+    Btn.Parent = Scroll
+
+    local BtnCorner = Instance.new("UICorner")
+    BtnCorner.CornerRadius = UDim.new(0, 8)
+    BtnCorner.Parent = Btn
+
+    Btn.MouseButton1Click:Connect(callback)
+end
+
+--------------------------------------------------------
+-- FUNCTION 1: MOVE OPTIONS
+--------------------------------------------------------
+
+-- 1. บิน 🕊️
+CreateToggleRow("บิน🕊️", function(val)
+    Fly_Active = val
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    
+    if Fly_Active then
+        FlyBodyVel = Instance.new("BodyVelocity")
+        FlyBodyVel.MaxForce = Vector3.new(4e5, 4e5, 4e5)
+        FlyBodyVel.Velocity = Vector3.new(0, 0, 0)
+        FlyBodyVel.Parent = char.HumanoidRootPart
+
+        FlyBodyGyro = Instance.new("BodyGyro")
+        FlyBodyGyro.MaxTorque = Vector3.new(4e5, 4e5, 4e5)
+        FlyBodyGyro.CFrame = char.HumanoidRootPart.CFrame
+        FlyBodyGyro.Parent = char.HumanoidRootPart
+    else
+        if FlyBodyVel then FlyBodyVel:Destroy() end
+        if FlyBodyGyro then FlyBodyGyro:Destroy() end
+    end
+end)
+
+-- 2. วิ่งเร็ว 🏃
+CreateToggleRow("วิ่งเร็ว🏃", function(val)
+    Speed_Active = val
+end)
+
+--------------------------------------------------------
+-- FUNCTION 2: AUTO FARM
+--------------------------------------------------------
+
+-- 3. ฟาร์มเงินออโต้ 🪙💰
+CreateToggleRow("ฟาร์มเงินออโต้🪙💰", function(val)
+    AutoFarm_Active = val
+end)
+
+--------------------------------------------------------
+-- FUNCTION 3: TELEPORTS
+--------------------------------------------------------
+
+-- 4. เทเลพอร์ตไปด่านสุดท้าย 🏁
+CreateButtonRow("เทเลพอร์ตไปด่านสุดท้าย🏁", function()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    
+    local targetPos = nil
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v.Name:lower():find("finish") or v.Name:lower():find("laststage") or v.Name:lower():find("endzone") then
+            targetPos = v.CFrame
+            break
+        end
+    end
+    
+    if targetPos then
+        char.HumanoidRootPart.CFrame = targetPos + Vector3.new(0, 3, 0)
+    else
+        -- Default High Teleport / Fallback
+        char.HumanoidRootPart.CFrame = char.HumanoidRootPart.CFrame * CFrame.new(0, 500, -1000)
+    end
+end)
+
+-- 5. เทเลพอร์ตไปไข่ที่ดีที่สุด 🥚✨
+CreateButtonRow("เทเลพอร์ตไปไข่ที่ดีที่สุด🥚✨", function()
+    local char = LocalPlayer.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
+    
+    local bestEgg = nil
+    for _, v in pairs(Workspace:GetDescendants()) do
+        if v.Name:lower():find("egg") or v.Name:lower():find("best") then
+            if v:IsA("BasePart") or v:IsA("Model") then
+                bestEgg = v
+            end
+        end
+    end
+    
+    if bestEgg then
+        local pos = bestEgg:IsA("BasePart") and bestEgg.CFrame or bestEgg:GetPivot()
+        char.HumanoidRootPart.CFrame = pos * CFrame.new(0, 3, -5)
+    end
+end)
+
+--------------------------------------------------------
+-- LOOPS & EXECUTORS
+--------------------------------------------------------
+
+-- Movement Loop (Speed & Flying)
+RunService.RenderStepped:Connect(function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("Humanoid") then
+        if Speed_Active then
+            char.Humanoid.WalkSpeed = 50
+        else
+            char.Humanoid.WalkSpeed = 16
+        end
+        
+        if Fly_Active and FlyBodyVel and FlyBodyGyro and char:FindFirstChild("HumanoidRootPart") then
+            local cam = Workspace.CurrentCamera
+            FlyBodyGyro.CFrame = cam.CFrame
+            FlyBodyVel.Velocity = cam.CFrame.LookVector * 60
+        end
+    end
+end)
+
+-- Auto Farm Money Loop
+task.spawn(function()
+    while task.wait(0.2) do
+        if AutoFarm_Active and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            for _, coin in pairs(Workspace:GetDescendants()) do
+                if coin.Name:lower():find("coin") or coin.Name:lower():find("money") or coin.Name:lower():find("gem") then
+                    if coin:IsA("BasePart") then
+                        LocalPlayer.Character.HumanoidRootPart.CFrame = coin.CFrame
+                        task.wait(0.1)
+                    end
+                end
+            end
+        end
+    end
+end)
